@@ -22,6 +22,7 @@ const JUMP_VELOCITY = 8.0;            // initial upward velocity on Space
 
 // Bounds -------------------------------------------------------------------
 const SEA_MARGIN = 3;                  // allow player this far onto the beach past shoreline
+const BOUND_XZ = 200;                  // terrain extent clamp (+/- 200 on X and Z)
 
 // Reusable temp vectors (avoid per-frame allocation) -----------------------
 const _desired = new THREE.Vector3();
