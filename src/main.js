@@ -12,6 +12,7 @@ import { createLandmarks } from './scene/landmarks.js';
 import { createVegetation } from './scene/vegetation.js';
 import { createLighting } from './scene/lighting.js';
 import { createPostprocessing } from './scene/postprocessing.js';
+import { createPlayer } from './controls/player.js';
 
 // ── Renderer ────────────────────────────────────────────────────────────────
 // outputBufferType: HalfFloatType is REQUIRED by renderer.setEffects() in r184 —
@@ -39,9 +40,8 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   2000,
 );
-// Elevated vantage looking south-southwest over the scene toward the bay.
-camera.position.set(40, 18, 60);
-camera.lookAt(0, 5, -20);
+// Initial position set by Chunk 6 player controls below; camera starts neutral.
+camera.position.set(0, 4, 50);
 
 // ── Parallel scene modules (Chunks 2/3/4) ───────────────────────────────────
 const terrain = createTerrain();                        // { group, getHeight, roads }
@@ -74,12 +74,29 @@ for (const light of lights) scene.add(light);
 // then applies ACES tone mapping + sRGB output itself (no OutputPass needed).
 const post = createPostprocessing(renderer);            // { passes, setSize }
 renderer.setEffects(post.passes);
+// ── Player controls (Chunk 6) ────────────────────────────────────────────────
+// createPlayer wires PointerLockControls against terrain.getHeight for Y-bounds.
+const player = createPlayer(camera, renderer, terrain);  // { controls, update, object }
+scene.add(player.object);
+
+// Start the player at a good viewpoint: mid-scene on land, looking south toward
+// the bay and the Huashi castle area. Y is set from the terrain sampler.
+const startX = 0;
+const startZ = 50;
+player.object.position.set(startX, terrain.getHeight(startX, startZ) + 2, startZ);
+camera.lookAt(0, 5, -20);
+
+// Pointer lock: click the canvas to enter first-person look. Chunk 7 UI will
+// hook these lock/unlock events for the intro overlay + HUD.
+renderer.domElement.addEventListener('click', () => player.controls.lock());
+player.controls.addEventListener('lock', () => console.log('[player] pointer locked'));
+player.controls.addEventListener('unlock', () => console.log('[player] pointer unlocked'));
 
 // ── Animation loop ───────────────────────────────────────────────────────────
 const clock = new THREE.Clock();
 
 // Collect per-frame update functions (only modules that export one).
-const updaters = [sea.update];
+const updaters = [sea.update, player.update];
 
 renderer.setAnimationLoop(() => {
   const dt = clock.getDelta();
