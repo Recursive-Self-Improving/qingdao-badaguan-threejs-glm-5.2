@@ -13,6 +13,7 @@ import { createVegetation } from './scene/vegetation.js';
 import { createLighting } from './scene/lighting.js';
 import { createPostprocessing } from './scene/postprocessing.js';
 import { createPlayer } from './controls/player.js';
+import { createOverlay } from './ui/overlay.js';
 
 // ── Renderer ────────────────────────────────────────────────────────────────
 // outputBufferType: HalfFloatType is REQUIRED by renderer.setEffects() in r184 —
@@ -86,17 +87,35 @@ const startZ = 50;
 player.object.position.set(startX, terrain.getHeight(startX, startZ) + 2, startZ);
 camera.lookAt(0, 5, -20);
 
-// Pointer lock: click the canvas to enter first-person look. Chunk 7 UI will
-// hook these lock/unlock events for the intro overlay + HUD.
-renderer.domElement.addEventListener('click', () => player.controls.lock());
-player.controls.addEventListener('lock', () => console.log('[player] pointer locked'));
-player.controls.addEventListener('unlock', () => console.log('[player] pointer unlocked'));
+// ── UI overlay (Chunk 7) ─────────────────────────────────────────────────────
+// Build a landmarks array from the landmark group children positions so the
+// overlay can do nearest-landmark location detection + minimap dots. The two
+// hero landmarks carry bilingual names; other children fall back to generic.
+const landmarkPoints = [];
+landmarks.group.children.forEach((child) => {
+  const isHuashi = child.position.x < -50 && child.position.z < -50;
+  const isPrincess = !isHuashi && child.position.x > 0 && child.position.z > 0;
+  landmarkPoints.push({
+    name: isHuashi
+      ? { zh: '花石楼', en: 'Huashi Building' }
+      : isPrincess
+        ? { zh: '公主楼', en: 'Princess Building' }
+        : { zh: '', en: 'Villa' },
+    position: { x: child.position.x, z: child.position.z },
+  });
+});
+
+// createOverlay wires the intro screen (click → pointer lock), HUD (location +
+// controls hint), and minimap. It owns the lock/unlock event handling now, so
+// the Chunk 6 console.log placeholders are removed here.
+const overlay = createOverlay(player, landmarkPoints, terrain.roads);
 
 // ── Animation loop ───────────────────────────────────────────────────────────
 const clock = new THREE.Clock();
 
 // Collect per-frame update functions (only modules that export one).
-const updaters = [sea.update, player.update];
+const updaters = [sea.update, player.update, overlay.update];
+
 
 renderer.setAnimationLoop(() => {
   const dt = clock.getDelta();
