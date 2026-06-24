@@ -405,7 +405,7 @@ const STYLES = ['castle', 'renaissance', 'danish', 'japanese', 'modern', 'mixed'
  * Grid spacing ~30 units spanning roughly -120..120 on X and Z, set back from roads.
  * Returns { group }.
  */
-export function createVillas() {
+export function createVillas(getHeight) {
   const group = new THREE.Group();
   const rand = rng(20240624);
 
@@ -430,6 +430,9 @@ export function createVillas() {
     const height = 5 + rand() * 3;
     const rotation = (rand() - 0.5) * 0.5;
     const scaleJitter = 0.92 + rand() * 0.18;
+    // Sit on the terrain surface when a getHeight sampler is provided; fall
+    // back to Y=0 (ground level) for backward compatibility.
+    const y = getHeight ? getHeight(spot.x, spot.z) : 0;
 
     const villa = createVilla({
       style,
@@ -445,7 +448,7 @@ export function createVillas() {
       depth,
       height,
       windows: true,
-      position: [spot.x, 0, spot.z],
+      position: [spot.x, y, spot.z],
       rotation,
     });
     villa.scale.setScalar(scaleJitter);

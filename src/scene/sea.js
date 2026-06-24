@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Water } from 'three/addons/objects/Water.js';
-import { SUN_DIRECTION, SUN_POSITION } from '../config/sun.js';
+import { SUN_DIRECTION } from '../config/sun.js';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Chunk 2 — Taiping Bay sea surface.
@@ -76,15 +76,16 @@ export function createSea() {
   // just below the surface gives the #4E8E9E shallower band near the shore.
   const shallowGeo = new THREE.PlaneGeometry(600, 220, 1, 1);
   shallowGeo.rotateX(-Math.PI / 2);
-  const shallowMat = new THREE.MeshStandardMaterial({
+  const shallowMat = new THREE.MeshBasicMaterial({
     color: 0x4E8E9E,                                // shallow #4E8E9E
     transparent: true,
-    opacity: 0.35,
-    roughness: 0.6,
-    metalness: 0.0,
+    opacity: 0.4,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
   });
   const shallow = new THREE.Mesh(shallowGeo, shallowMat);
-  shallow.position.set(0, -0.05, -250);            // hugs the near shore
+  shallow.position.set(0, 0.1, -250);              // just above the surface so it tints the water
+  shallow.renderOrder = 1;
   shallow.receiveShadow = false;
   shallow.castShadow = false;
   group.add(shallow);

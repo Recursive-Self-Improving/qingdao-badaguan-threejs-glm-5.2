@@ -44,7 +44,7 @@ const EW_X_TO = 90;
 
 // Smooth S-curve shoreline along the south (negative Z) — the Taiping Bay
 // land/sea boundary. A compound sine gives a gentle, natural S-bend.
-function shorelineZ(x) {
+export function shorelineZ(x) {
   return SHORE_BASE_Z + 10 * Math.sin(x * 0.010) - 6 * Math.sin(x * 0.022 + 1.0);
 }
 

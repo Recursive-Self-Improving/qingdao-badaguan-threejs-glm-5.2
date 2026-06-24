@@ -56,14 +56,14 @@ const sky = createSky();                                // { group, fog }
 scene.add(sky.group);
 scene.fog = sky.fog;                                    // FogExp2 is not an Object3D
 
-const villas = createVillas();                          // { group }
+const villas = createVillas(terrain.getHeight);          // { group } — Y follows terrain
 scene.add(villas.group);
 
-const landmarks = createLandmarks();                    // { group }
+const landmarks = createLandmarks(terrain.getHeight);    // { group } — Y follows terrain
 scene.add(landmarks.group);
 
 // Pass terrain.roads so tree species match the road layout.
-const vegetation = createVegetation(terrain.roads);     // { group }
+const vegetation = createVegetation(terrain.roads, terrain.getHeight); // { group } — Y follows terrain
 scene.add(vegetation.group);
 
 // ── Lighting (Chunk 5) ───────────────────────────────────────────────────────

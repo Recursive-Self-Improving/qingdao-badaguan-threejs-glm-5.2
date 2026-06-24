@@ -286,10 +286,20 @@ function createPrincessBuilding() {
  * Bathing Beach (SW) and Princess Building (公主楼) at Juyongguan Road.
  * Returns { group }.
  */
-export function createLandmarks() {
+export function createLandmarks(getHeight) {
   const group = new THREE.Group();
-  group.add(createHuashiBuilding());
-  group.add(createPrincessBuilding());
+  const huashi = createHuashiBuilding();
+  const princess = createPrincessBuilding();
+
+  // Sit each landmark on the terrain surface when a getHeight sampler is
+  // provided; otherwise leave the builders' default Y (0) untouched.
+  if (getHeight) {
+    huashi.position.y = getHeight(huashi.position.x, huashi.position.z);
+    princess.position.y = getHeight(princess.position.x, princess.position.z);
+  }
+
+  group.add(huashi);
+  group.add(princess);
 
   group.userData.dispose = () => {
     group.traverse((o) => {

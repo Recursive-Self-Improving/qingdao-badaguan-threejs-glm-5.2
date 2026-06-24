@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+import { shorelineZ } from '../scene/terrain.js';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Chunk 6 — Player Controls
@@ -20,8 +21,7 @@ const GRAVITY = 25.0;                 // units / second²
 const JUMP_VELOCITY = 8.0;            // initial upward velocity on Space
 
 // Bounds -------------------------------------------------------------------
-const BOUND_XZ = 200;                 // clamp player X/Z to ±200 (terrain ~400²)
-const SEA_Z_LIMIT = -135;             // cannot go below this Z (shoreline ~-130)
+const SEA_MARGIN = 3;                  // allow player this far onto the beach past shoreline
 
 // Reusable temp vectors (avoid per-frame allocation) -----------------------
 const _desired = new THREE.Vector3();
@@ -157,9 +157,10 @@ export function createPlayer(camera, renderer, terrain) {
     // Clamp to terrain extent.
     _pos.x = THREE.MathUtils.clamp(_pos.x, -BOUND_XZ, BOUND_XZ);
     _pos.z = THREE.MathUtils.clamp(_pos.z, -BOUND_XZ, BOUND_XZ);
-    // Prevent walking into the sea (south edge). Shoreline is ~z=-130; the
-    // beach strip sits just above it. Keep the player on land.
-    if (_pos.z < SEA_Z_LIMIT) _pos.z = SEA_Z_LIMIT;
+    // Prevent walking into the sea (south edge). The shoreline is an S-curve,
+    // so clamp Z to the shoreline at the player's X plus a small beach margin.
+    const seaZ = shorelineZ(_pos.x) + SEA_MARGIN;
+    if (_pos.z < seaZ) _pos.z = seaZ;
 
     object.position.copy(_pos);
   }

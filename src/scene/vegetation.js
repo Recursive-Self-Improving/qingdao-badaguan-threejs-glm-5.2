@@ -174,7 +174,7 @@ function jitter(i, salt) {
 // Build one InstancedMesh pair (trunk + canopy) for a given species, placing
 // instances along both flanks of a road. Returns { trunk, canopy } or null.
 // ---------------------------------------------------------------------------
-function buildAvenue(road, group) {
+function buildAvenue(road, group, getHeight) {
   const spec = SPECIES[road.species];
   if (!spec) return null;
 
@@ -243,7 +243,7 @@ function buildAvenue(road, group) {
 
       // Trunk: base sits on ground (y=0), cylinder centered so shift up by half height.
       const trunkH = spec.trunkHeight * heightVar;
-      dummy.position.set(px, trunkH / 2, pz);
+      dummy.position.set(px, (getHeight ? getHeight(px, pz) : 0) + trunkH / 2, pz);
       dummy.rotation.set(0, rotY, 0);
       dummy.scale.set(scaleXY, heightVar, scaleXY);
       dummy.updateMatrix();
@@ -254,7 +254,7 @@ function buildAvenue(road, group) {
       const canopyLift = spec.canopyShape === 'cone'
         ? trunkH + spec.canopyHeight * 0.5 * heightVar
         : trunkH + spec.canopyRadius * 0.6 * heightVar;
-      dummy.position.set(px, canopyLift, pz);
+      dummy.position.set(px, (getHeight ? getHeight(px, pz) : 0) + canopyLift, pz);
       dummy.rotation.set(0, rotY, 0);
       dummy.scale.set(scaleXY, heightVar, scaleXY);
       dummy.updateMatrix();
@@ -280,7 +280,7 @@ function buildAvenue(road, group) {
 // Pine/cypress accent rows: a few evergreen cones interspersed on ginkgo roads
 // to add evergreen contrast per the brief ("pine/cypress accents").
 // ---------------------------------------------------------------------------
-function buildPineAccents(road, group) {
+function buildPineAccents(road, group, getHeight) {
   const spec = SPECIES.pine;
   const flank = 7.5; // slightly outside the main avenue
   const spacing = 24; // sparse accents
@@ -327,14 +327,14 @@ function buildPineAccents(road, group) {
       const sc = 0.85 + jitter(idx, 15) * 0.3;
 
       const trunkH = spec.trunkHeight * hv;
-      dummy.position.set(px, trunkH / 2, pz);
+      dummy.position.set(px, (getHeight ? getHeight(px, pz) : 0) + trunkH / 2, pz);
       dummy.rotation.set(0, rotY, 0);
       dummy.scale.set(sc, hv, sc);
       dummy.updateMatrix();
       trunk.setMatrixAt(idx, dummy.matrix);
 
       const lift = trunkH + spec.canopyHeight * 0.5 * hv;
-      dummy.position.set(px, lift, pz);
+      dummy.position.set(px, (getHeight ? getHeight(px, pz) : 0) + lift, pz);
       dummy.scale.set(sc, hv, sc);
       dummy.updateMatrix();
       canopy.setMatrixAt(idx, dummy.matrix);
@@ -356,7 +356,7 @@ function buildPineAccents(road, group) {
 // Shrub clusters at villa garden positions. A few small instanced sphere
 // clusters placed at known villa-plot corners along the road grid.
 // ---------------------------------------------------------------------------
-function buildShrubs(group) {
+function buildShrubs(group, getHeight) {
   // Villa garden positions (approx block centers set back from roads).
   const gardens = [
     { x: -45, z: -45 },
@@ -389,7 +389,7 @@ function buildShrubs(group) {
       const pz = g.z + Math.sin(a) * r;
       const sy = 0.6 + jitter(i, 23) * 0.6;
       const sxz = 0.7 + jitter(i, 24) * 0.6;
-      dummy.position.set(px, sy * 0.5, pz);
+      dummy.position.set(px, (getHeight ? getHeight(px, pz) : 0) + sy * 0.5, pz);
       dummy.rotation.set(0, jitter(i, 25) * Math.PI, 0);
       dummy.scale.set(sxz, sy, sxz);
       dummy.updateMatrix();
@@ -407,7 +407,7 @@ function buildShrubs(group) {
 // Low garden walls around a few villa plots — warm stone boxes ~1.2 units tall,
 // permeable styling (thin segments with gaps).
 // ---------------------------------------------------------------------------
-function buildWalls(group) {
+function buildWalls(group, getHeight) {
   const wallH = 1.2;
   const wallT = 0.3; // thin
   const segLen = 4.0; // segment length
@@ -465,7 +465,7 @@ function buildWalls(group) {
   const dummy = new THREE.Object3D();
   for (let i = 0; i < total; i++) {
     const s = segments[i];
-    dummy.position.set(s.cx, wallH / 2, s.cz);
+    dummy.position.set(s.cx, (getHeight ? getHeight(s.cx, s.cz) : 0) + wallH / 2, s.cz);
     dummy.rotation.set(0, -s.angle, 0); // align box length (X) along segment
     dummy.scale.set(s.length, 1, 1);
     dummy.updateMatrix();
@@ -480,7 +480,7 @@ function buildWalls(group) {
 // ---------------------------------------------------------------------------
 // Public factory
 // ---------------------------------------------------------------------------
-export function createVegetation(roads) {
+export function createVegetation(roads, getHeight) {
   const group = new THREE.Group();
   group.name = 'vegetation';
 
@@ -489,15 +489,15 @@ export function createVegetation(roads) {
     : defaultRoads();
 
   for (const road of normalized) {
-    buildAvenue(road, group);
+    buildAvenue(road, group, getHeight);
     // Ginkgo avenues get pine/cypress accents per the brief.
     if (road.species === 'ginkgo') {
-      buildPineAccents(road, group);
+      buildPineAccents(road, group, getHeight);
     }
   }
 
-  buildShrubs(group);
-  buildWalls(group);
+  buildShrubs(group, getHeight);
+  buildWalls(group, getHeight);
 
   return { group };
 }
